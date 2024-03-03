@@ -1,0 +1,96 @@
+{
+  "resourceType": "CarePlan",
+  "id": "HIVScreening",
+  "contained": [ {
+    "resourceType": "RequestGroup",
+    "id": "HIVScreening",
+    "instantiatesCanonical": [ "http://fhir.org/guides/nachc/hiv-cds/PlanDefinition/HIVScreening|1.0.3" ],
+    "status": "draft",
+    "intent": "proposal",
+    "subject": {
+      "reference": "Patient/MSMPatient"
+    },
+    "action": [ {
+      "title": "HIV Screening",
+      "description": "Joe Kotic",
+      "priority": "routine",
+      "documentation": [ {
+        "type": "documentation",
+        "display": "Info for those with HIV",
+        "url": "https://www.cdc.gov/hiv/guidelines/testing.html"
+      } ],
+      "condition": [ {
+        "kind": "start",
+        "expression": {
+          "language": "text/cql-expression",
+          "expression": "true"
+        }
+      } ],
+      "action": [ {
+        "title": "HIV Screening Recommended due to patient being at Moderate Risk for HIV and over a Year has passed since previous screening.",
+        "description": "Health-care providers should subsequently test all persons likely to be at moderate risk for HIV at least annually. Persons likely to be at moderate risk include MSM, Transgender Persons, and Gay or Bisexual Men who are sexually active and have sex with other men.",
+        "priority": "asap",
+        "condition": [ {
+          "kind": "applicability",
+          "expression": {
+            "description": "Determine if Patient is in screening population.",
+            "language": "text/cql-identifier",
+            "expression": "Risk Level Condition"
+          }
+        } ],
+        "type": {
+          "coding": [ {
+            "system": "http://terminology.hl7.org/CodeSystem/plan-definition-type",
+            "code": "create",
+            "display": "Create"
+          } ]
+        },
+        "selectionBehavior": "any",
+        "resource": {
+          "reference": "ServiceRequest/activitydefinition-hiv-screening-request"
+        },
+        "action": [ {
+          "description": "Will perform HIV screening"
+        }, {
+          "description": "Will not perform HIV screening at this time - Snooze 1 month."
+        }, {
+          "description": "Will not perform HIV screening at this time - Snooze 12 months."
+        }, {
+          "description": "Will not perform HIV screening at this time - patient declined."
+        } ]
+      } ]
+    } ]
+  }, {
+    "resourceType": "ServiceRequest",
+    "id": "activitydefinition-hiv-screening-request",
+    "instantiatesCanonical": [ "http://fhir.org/guides/nachc/hiv-cds/ActivityDefinition/activitydefinition-hiv-screening-request" ],
+    "status": "draft",
+    "intent": "order",
+    "code": {
+      "coding": [ {
+        "system": "http://fhir.org/guides/nachc/hiv-cds/CodeSystem/hiv-custom",
+        "code": "NACHC.A2.DE218",
+        "display": "Human immunodeficiency virus antigen test (procedure)"
+      }, {
+        "system": "http://snomed.info/sct",
+        "code": "31676001",
+        "display": "Human immunodeficiency virus antigen test (procedure)"
+      } ]
+    },
+    "subject": {
+      "reference": "Patient/MSMPatient"
+    },
+    "asNeededBoolean": true
+  } ],
+  "instantiatesCanonical": [ "http://fhir.org/guides/nachc/hiv-cds/PlanDefinition/HIVScreening|1.0.3" ],
+  "status": "draft",
+  "intent": "proposal",
+  "subject": {
+    "reference": "Patient/MSMPatient"
+  },
+  "activity": [ {
+    "reference": {
+      "reference": "#RequestGroup/HIVScreening"
+    }
+  } ]
+}
