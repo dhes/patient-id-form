@@ -59,16 +59,23 @@ export default {
 					this.submitted = true;
 					this.responseData = response.data;
 
-					// Check for the nested action array and store it
-					if (response.data.contained &&
-						response.data.contained[0].action &&
-						response.data.contained[0].action[0].action &&
-						response.data.contained[0].action[0].action[0].action) {
-						this.recommendation = response.data.contained[0].action[0].action[0].title;
-						this.actions = response.data.contained[0].action[0].action[0].action; // Store the action array
+					// Find the RequestGroup in the contained array
+					const requestGroup = response.data.contained.find(containedItem => containedItem.resourceType === 'RequestGroup');
+
+					if (requestGroup &&
+						requestGroup.action &&
+						requestGroup.action.length > 0 &&
+						requestGroup.action[0].action &&
+						requestGroup.action[0].action.length > 0 &&
+						requestGroup.action[0].action[0].title) {
+						this.recommendation = requestGroup.action[0].action[0].title;
+						this.actions = requestGroup.action[0].action[0].action; // Assuming you need to work with the nested action array
 						this.showModal = true;
 					} else {
-						this.actions = []; // Ensure actions is cleared if path doesn't exist
+						// Handle the case where the structure isn't as expected
+						this.recommendation = "No recommendation found.";
+						this.actions = [];
+						this.showModal = true;
 					}
 				})
 				.catch(error => {
