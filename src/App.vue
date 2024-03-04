@@ -61,6 +61,7 @@ export default {
 
 					// Find the RequestGroup in the contained array
 					const requestGroup = response.data.contained.find(containedItem => containedItem.resourceType === 'RequestGroup');
+					// const serviceRequest = response.data.contained.find(item => item.resourceType === 'ServiceRequest');
 
 					if (requestGroup &&
 						requestGroup.action &&
@@ -89,11 +90,51 @@ export default {
 			this.selectedAction = null; // Reset selection when modal is closed
 		},
 		submitAction() {
-			console.log("Selected action:", this.selectedAction);
-			// Here you can handle the submission of the selected action
-			// For example, sending it to the server or processing it further
-			this.closeModal(); // Close the modal after submission
+			// Check if the selected action matches the first action's description
+			if (this.actions.length > 0 && this.selectedAction === this.actions[0].description) {
+				// Locate the ServiceRequest resource as previously described
+				const serviceRequest = this.responseData.contained.find(item => item.resourceType === 'ServiceRequest');
+
+				if (serviceRequest) {
+					// Construct the Bundle with the ServiceRequest
+					const bundle = {
+						resourceType: "Bundle",
+						type: "transaction",
+						entry: [{
+							resource: serviceRequest,
+							request: {
+								method: "POST",
+								url: "ServiceRequest"
+							}
+						}]
+					};
+
+					// Post the Bundle to the HAPI FHIR server
+					axios.post('http://localhost:8080/fhir', bundle, {
+						headers: {
+							'Content-Type': 'application/fhir+json',
+							// Authentication headers if needed
+						}
+					})
+						.then(response => {
+							console.log("Bundle posted successfully:", response.data);
+							alert("Service request has been successfully submitted.");
+							// Additional success handling
+							this.showModal = false;
+						})
+						.catch(error => {
+							console.error("Error posting Bundle:", error);
+							alert("There was an error submitting the service request.");
+							// Error handling
+						});
+				}
+			} else {
+				// Handle case where the first action is not selected
+				// For example, notify the user or simply return without doing anything
+				console.log("The first action was not selected. No service request submitted.");
+			}
 		}
+
 	}
 }
 </script>
