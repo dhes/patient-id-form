@@ -66,11 +66,11 @@ export default {
 					if (requestGroup &&
 						requestGroup.action &&
 						requestGroup.action.length > 0 &&
-						requestGroup.action[0].action &&
-						requestGroup.action[0].action.length > 0 &&
-						requestGroup.action[0].action[0].title) {
-						this.recommendation = requestGroup.action[0].action[0].title;
-						this.actions = requestGroup.action[0].action[0].action; // Assuming you need to work with the nested action array
+						// requestGroup.action[0].action &&
+						// requestGroup.action[0].action.length > 0 &&
+						requestGroup.action[0].title) {
+						this.recommendation = requestGroup.action[0].title;
+						this.actions = requestGroup.action[0].action; // Assuming you need to work with the nested action array
 						this.showModal = true;
 					} else {
 						// Handle the case where the structure isn't as expected

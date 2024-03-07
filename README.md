@@ -22,3 +22,10 @@ yarn lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+2024-03-05
+
+Current status - to run this routine make sure you have a HAPI JPA server running at port 8080. Start this form at port 8081 with
+```
+npm run serve -- --port 3000
+```
