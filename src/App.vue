@@ -5,6 +5,14 @@
 			<label for="patientId">Patient ID:</label>
 			<input v-model="patientId" id="patientId" type="text"
 				placeholder="Enter Patient ID">
+
+			<label for="screeningType">Screening Type:</label>
+			<select v-model="screeningType" id="screeningType">
+				<option v-for="service in screeningServices" :value="service.id" :key="service.id">
+					{{ service.title }}
+				</option>
+			</select>
+
 			<button type="submit">Submit</button>
 		</form>
 		<p v-if="submitted">Submitted Patient ID: {{ patientId }}</p>
@@ -42,6 +50,8 @@ export default {
 	data() {
 		return {
 			patientId: '',
+			screeningType: '',
+			screeningServices: [], // Array to hold the fetched screening services
 			submitted: false,
 			responseData: null,
 			showModal: false, // To control the visibility of the modal
@@ -52,8 +62,16 @@ export default {
 		}
 	},
 	methods: {
+		async fetchScreeningServices() {
+			try {
+				const response = await axios.get('http://localhost:8080/cds-services');
+				this.screeningServices = response.data.services; // Assuming the JSON structure includes a services array
+			} catch (error) {
+				console.error('Error fetching screening services:', error);
+			}
+		},
 		submitForm() {
-			const url = `http://localhost:8080/fhir/PlanDefinition/HIVScreening/$apply?subject=Patient/${this.patientId}`;
+			const url = `http://localhost:8080/fhir/PlanDefinition/${this.screeningType}/$apply?subject=Patient/${this.patientId}`;
 			axios.get(url)
 				.then(response => {
 					this.submitted = true;
@@ -135,6 +153,9 @@ export default {
 			}
 		}
 
+	},
+	created() {
+		this.fetchScreeningServices();
 	}
 }
 </script>
