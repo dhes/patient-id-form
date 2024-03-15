@@ -5,7 +5,6 @@
 			<label for="patientId">Patient ID:</label>
 			<input v-model="patientId" id="patientId" type="text"
 				placeholder="Enter Patient ID">
-
 			<select v-model="selectedPatientId">
 				<option disabled value="">Select a patient</option>
 				<option v-for="patient in patients" :key="patient.id"
@@ -14,7 +13,6 @@
 					<!-- Adjust if your patient name structure is different -->
 				</option>
 			</select>
-
 			<label for="screeningType">Screening Type:</label>
 			<select v-model="screeningType" id="screeningType">
 				<option v-for="service in screeningServices" :value="service.id"
@@ -22,10 +20,9 @@
 					{{ service.title }}
 				</option>
 			</select>
-
 			<button type="submit">Submit</button>
 		</form>
-		<p v-if="submitted">Submitted Patient ID: {{ patientId }}</p>
+		<p v-if="submitted">Submitted Patient ID: {{ selectedPatientId }}</p>  <!-- was patientId-->
 		<!-- Display the JSON response -->
 		<div v-if="responseData">
 			<h2>Response:</h2>
@@ -50,7 +47,6 @@
 		</div>
 	</div>
 </template>
-
 
 <script>
 import axios from 'axios'; // Import Axios
@@ -85,7 +81,7 @@ export default {
 			}
 		},
 		submitForm() {
-			const url = `http://localhost:8080/fhir/PlanDefinition/${this.screeningType}/$apply?subject=Patient/${this.patientId}`;
+			const url = `http://localhost:8080/fhir/PlanDefinition/${this.screeningType}/$apply?subject=Patient/${this.selectedPatientId}`;
 			axios.get(url)
 				.then(response => {
 					this.submitted = true;
