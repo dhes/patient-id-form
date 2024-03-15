@@ -6,9 +6,19 @@
 			<input v-model="patientId" id="patientId" type="text"
 				placeholder="Enter Patient ID">
 
+			<select v-model="selectedPatientId">
+				<option disabled value="">Select a patient</option>
+				<option v-for="patient in patients" :key="patient.id"
+					:value="patient.id">
+					{{ patient.id }}
+					<!-- Adjust if your patient name structure is different -->
+				</option>
+			</select>
+
 			<label for="screeningType">Screening Type:</label>
 			<select v-model="screeningType" id="screeningType">
-				<option v-for="service in screeningServices" :value="service.id" :key="service.id">
+				<option v-for="service in screeningServices" :value="service.id"
+					:key="service.id">
 					{{ service.title }}
 				</option>
 			</select>
@@ -59,9 +69,13 @@ export default {
 			// descriptions: [], // To store descriptions from the response
 			actions: [],
 			selectedAction: null, // To store the selected action		
+			patients: [],
+			selectedPatientId: '',
 		}
 	},
-	methods: {
+	mounted() {
+		this.fetchPatients();
+	}, methods: {
 		async fetchScreeningServices() {
 			try {
 				const response = await axios.get('http://localhost:8080/cds-services');
@@ -151,7 +165,18 @@ export default {
 				// For example, notify the user or simply return without doing anything
 				console.log("The first action was not selected. No service request submitted.");
 			}
-		}
+		},
+		async fetchPatients() {
+			try {
+				const response = await axios.get('http://localhost:8080/fhir/Patient');
+				this.patients = response.data.entry.map(entry => ({
+					id: entry.resource.id,
+					name: entry.resource.name // Assuming the patient has a 'name' array; adjust as necessary
+				}));
+			} catch (error) {
+				console.error('Error fetching patients:', error);
+			}
+		},
 
 	},
 	created() {
