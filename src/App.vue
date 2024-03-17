@@ -87,22 +87,22 @@ export default {
 				try {
 					const response = await axios.get(url);
 					const requestGroup = response.data.contained.find(containedItem => containedItem.resourceType === 'RequestGroup');
-					if (requestGroup && requestGroup.action && requestGroup.action.length > 0 && requestGroup.action[0].title) {
-						this.recommendations.push({
-							screeningType: service.title, // Assuming you want to show which screening the recommendation is for
-							recommendation: requestGroup.action[0].title
-						});
-					} else {
+					if (requestGroup && requestGroup.action && requestGroup.action.length > 0 && requestGroup.action[0].title && requestGroup.action[0].title !== "No recommendation found.") {
+						// Only push if there's a valid recommendation
 						this.recommendations.push({
 							screeningType: service.title,
-							recommendation: "No recommendation found."
+							recommendation: requestGroup.action[0].title
 						});
 					}
+					// Do not push "No recommendation found." to the list
 				} catch (error) {
 					console.error("Error fetching recommendation for service:", service.title, error);
+					// You could handle errors differently or keep silent depending on your app's error handling strategy
 				}
 			}
-			this.showModal = true; // Show modal after all recommendations are collected
+			if (this.recommendations.length > 0) {
+				this.showModal = true; // Show modal only if there are recommendations
+			}
 		},
 		closeModal() {
 			this.showModal = false;
