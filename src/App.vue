@@ -35,8 +35,9 @@
 				<span class="close" @click="closeModal">&times;</span>
 				<h2>Action</h2>
 				<p>{{ recommendation }}</p>
+				<!--
 				<form @submit.prevent="submitAction">
-					<div v-for="(action, index) in actions" :key="index">
+					<div v-for="(action, index) in actions" :key="index">	
 						<input type="radio" :id="'action' + index"
 							:value="action.description" v-model="selectedAction"
 							name="actions">
@@ -44,6 +45,7 @@
 					</div>
 					<button type="submit">Submit</button>
 				</form>
+			-->
 			</div>
 		</div>
 	</div>
@@ -104,8 +106,9 @@ export default {
 					} else {
 						// Handle the case where the structure isn't as expected
 						this.recommendation = "No recommendation found.";
-						this.actions = [];
-						this.showModal = true;
+						console.log(this.recommendation)
+						// this.actions = [];
+						// this.showModal = true;
 					}
 				})
 				.catch(error => {
