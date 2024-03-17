@@ -21,7 +21,8 @@
 			</select>
 			<button type="submit">Submit</button>
 		</form>
-		<p v-if="submitted">Submitted Patient ID: {{ selectedPatientId }}</p>  <!-- was patientId-->
+		<p v-if="submitted">Submitted Patient ID: {{ selectedPatientId }}</p>
+		<!-- was patientId-->
 		<!-- Display the JSON response -->
 		<!--
 		<div v-if="responseData">
@@ -33,19 +34,14 @@
 		<div v-if="showModal" class="modal" @click="closeModal">
 			<div class="modal-content" @click.stop>
 				<span class="close" @click="closeModal">&times;</span>
-				<h2>Action</h2>
-				<p>{{ recommendation }}</p>
-				<!--
-				<form @submit.prevent="submitAction">
-					<div v-for="(action, index) in actions" :key="index">	
-						<input type="radio" :id="'action' + index"
-							:value="action.description" v-model="selectedAction"
-							name="actions">
-						<label :for="'action' + index">{{ action.description }}</label>
-					</div>
-					<button type="submit">Submit</button>
-				</form>
-			-->
+				<h2>Recommendations</h2>
+				<ul>
+					<li v-for="recommendation in recommendations"
+						:key="recommendation.screeningType">
+						<strong>{{ recommendation.screeningType }}:</strong> {{
+			recommendation.recommendation }}
+					</li>
+				</ul>
 			</div>
 		</div>
 	</div>
@@ -70,6 +66,7 @@ export default {
 			selectedAction: null, // To store the selected action		
 			patients: [],
 			selectedPatientId: '',
+			recommendations: [],
 		}
 	},
 	mounted() {
@@ -83,39 +80,29 @@ export default {
 				console.error('Error fetching screening services:', error);
 			}
 		},
-		submitForm() {
-			const url = `http://localhost:8080/fhir/PlanDefinition/${this.screeningType}/$apply?subject=Patient/${this.selectedPatientId}`;
-			axios.get(url)
-				.then(response => {
-					this.submitted = true;
-					this.responseData = response.data;
-
-					// Find the RequestGroup in the contained array
+		async submitForm() {
+			this.recommendations = []; // Reset recommendations
+			for (const service of this.screeningServices) {
+				const url = `http://localhost:8080/fhir/PlanDefinition/${service.id}/$apply?subject=Patient/${this.selectedPatientId}`;
+				try {
+					const response = await axios.get(url);
 					const requestGroup = response.data.contained.find(containedItem => containedItem.resourceType === 'RequestGroup');
-					// const serviceRequest = response.data.contained.find(item => item.resourceType === 'ServiceRequest');
-
-					if (requestGroup &&
-						requestGroup.action &&
-						requestGroup.action.length > 0 &&
-						// requestGroup.action[0].action &&
-						// requestGroup.action[0].action.length > 0 &&
-						requestGroup.action[0].title) {
-						this.recommendation = requestGroup.action[0].title;
-						this.actions = requestGroup.action[0].action; // Assuming you need to work with the nested action array
-						this.showModal = true;
+					if (requestGroup && requestGroup.action && requestGroup.action.length > 0 && requestGroup.action[0].title) {
+						this.recommendations.push({
+							screeningType: service.title, // Assuming you want to show which screening the recommendation is for
+							recommendation: requestGroup.action[0].title
+						});
 					} else {
-						// Handle the case where the structure isn't as expected
-						this.recommendation = "No recommendation found.";
-						console.log(this.recommendation)
-						// this.actions = [];
-						// this.showModal = true;
+						this.recommendations.push({
+							screeningType: service.title,
+							recommendation: "No recommendation found."
+						});
 					}
-				})
-				.catch(error => {
-					console.error("There was an error submitting the form:", error);
-					this.responseData = null;
-					this.actions = []; // Clear actions on error
-				});
+				} catch (error) {
+					console.error("Error fetching recommendation for service:", service.title, error);
+				}
+			}
+			this.showModal = true; // Show modal after all recommendations are collected
 		},
 		closeModal() {
 			this.showModal = false;
