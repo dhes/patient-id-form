@@ -2,9 +2,8 @@
 	<div id="app">
 		<h1>Patient ID Form</h1>
 		<form @submit.prevent="submitForm">
-			<label for="patientId">Patient ID:</label>
-			<input v-model="patientId" id="patientId" type="text"
-				placeholder="Enter Patient ID">
+			<label for="selectedPatientId">Patient ID:</label>
+			<!--- input v-model="patientId" id="patientId" type="text" placeholder="Enter Patient ID" -->
 			<select v-model="selectedPatientId">
 				<option disabled value="">Select a patient</option>
 				<option v-for="patient in patients" :key="patient.id"
@@ -24,10 +23,12 @@
 		</form>
 		<p v-if="submitted">Submitted Patient ID: {{ selectedPatientId }}</p>  <!-- was patientId-->
 		<!-- Display the JSON response -->
+		<!--
 		<div v-if="responseData">
 			<h2>Response:</h2>
 			<pre>{{ responseData }}</pre>
 		</div>
+		-->
 		<!-- Modal -->
 		<div v-if="showModal" class="modal" @click="closeModal">
 			<div class="modal-content" @click.stop>
