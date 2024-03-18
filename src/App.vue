@@ -12,15 +12,18 @@
 					<!-- Adjust if your patient name structure is different -->
 				</option>
 			</select>
-			<label for="screeningType">Screening Type:</label>
-			<select v-model="screeningType" id="screeningType">
-				<option v-for="service in screeningServices" :value="service.id"
-					:key="service.id">
-					{{ service.title }}
-				</option>
-			</select>
 			<button type="submit">Submit</button>
 		</form>
+		<h2>Screening Types:</h2>
+		<ul>
+			<li v-for="service in screeningServices" :key="service.id">
+				{{ service.title }}
+			</li>
+		</ul>
+		<div v-if="selectedPatientId">
+			<h2>Patient Summary:</h2>
+			<p><strong>Name:</strong> {{ patientSummary }}</p>
+		</div>
 		<p v-if="submitted">Submitted Patient ID: {{ selectedPatientId }}</p>
 		<!-- was patientId-->
 		<!-- Display the JSON response -->
@@ -127,7 +130,6 @@ export default {
 							}
 						}]
 					};
-
 					// Post the Bundle to the HAPI FHIR server
 					axios.post('http://localhost:8080/fhir', bundle, {
 						headers: {
@@ -168,7 +170,19 @@ export default {
 	},
 	created() {
 		this.fetchScreeningServices();
-	}
+	},
+	computed: {
+		patientSummary() {
+			if (!this.selectedPatientId) return '';
+
+			const patient = this.patients.find(p => p.id === this.selectedPatientId);
+			if (!patient || !patient.name || patient.name.length === 0) return 'No name available';
+
+			const givenName = patient.name[0].given.join(" "); // Join all given names with a space
+			const familyName = patient.name[0].family;
+			return `${givenName} ${familyName}`;
+		},
+	},
 }
 </script>
 
