@@ -22,7 +22,28 @@
 		</ul>
 		<div v-if="selectedPatientId">
 			<h2>Patient Summary:</h2>
-			<p><strong>Name:</strong> {{ patientSummary }}</p>
+			<ul>
+				<li><strong>Name:</strong> {{ patientSummary.name }}</li>
+				<li><strong>Age:</strong> {{ patientSummary.age }}</li>
+				<li><strong>Gender:</strong> {{ patientSummary.gender }}</li>
+				<li><strong>Active?:</strong> {{ patientSummary.active }}</li>
+				<li><strong>Deceased?:</strong> {{ patientSummary.deceased }}</li>
+				<li v-if="conditions.length > 0"><strong>Conditions:</strong>
+					<ul>
+						<li v-for="condition in conditions" :key="condition">{{ condition }}
+						</li>
+					</ul>
+				</li>
+				<li v-if="completedProcedures.length > 0"><strong>Completed
+						Procedures:</strong>
+					<ul>
+						<li v-for="procedure in completedProcedures"
+							:key="procedure.display">
+							{{ procedure.display }} - {{ procedure.date }}
+						</li>
+					</ul>
+				</li>
+			</ul>
 		</div>
 		<p v-if="submitted">Submitted Patient ID: {{ selectedPatientId }}</p>
 		<!-- was patientId-->
@@ -70,11 +91,48 @@ export default {
 			patients: [],
 			selectedPatientId: '',
 			recommendations: [],
+			conditions: [],
+			completedProcedures: [],
 		}
 	},
 	mounted() {
 		this.fetchPatients();
-	}, methods: {
+	},
+	methods: {
+		formatDate(dateString) {
+			if (!dateString) return 'Unknown date';
+			const date = new Date(dateString);
+			if (!isNaN(date.getTime())) {
+				// Pad the month and day with leading zeros if necessary
+				const year = date.getFullYear();
+				const month = (date.getMonth() + 1).toString().padStart(2, '0');
+				const day = date.getDate().toString().padStart(2, '0');
+				return `${year}-${month}-${day}`;
+			}
+			return 'Invalid date';
+		},
+		async fetchCompletedProcedures(patientId) {
+			if (!patientId) return;
+			try {
+				const response = await axios.get(`http://localhost:8080/fhir/Procedure?patient=${patientId}`);
+				this.completedProcedures = response.data.entry
+					.filter(entry => entry.resource.status === 'completed')
+					.map(entry => ({
+						display: entry.resource.code.coding[0].display,
+						date: this.formatDate(entry.resource.performedDateTime || entry.resource.performedPeriod?.start)
+					}));
+			} catch (error) {
+				console.error('Error fetching patient procedures:', error);
+				this.completedProcedures = []; // Reset procedures on error
+			}
+		},
+		calculateAge(birthDate) {
+			if (!birthDate) return '';
+			const birthday = new Date(birthDate);
+			const ageDifMs = Date.now() - birthday.getTime();
+			const ageDate = new Date(ageDifMs); // Miliseconds from epoch
+			return Math.abs(ageDate.getUTCFullYear() - 1970);
+		},
 		async fetchScreeningServices() {
 			try {
 				const response = await axios.get('http://localhost:8080/cds-services');
@@ -160,13 +218,28 @@ export default {
 				const response = await axios.get('http://localhost:8080/fhir/Patient');
 				this.patients = response.data.entry.map(entry => ({
 					id: entry.resource.id,
-					name: entry.resource.name // Assuming the patient has a 'name' array; adjust as necessary
+					name: entry.resource.name, // Assuming the patient has a 'name' array; adjust as necessary
+					birthDate: entry.resource.birthDate, // Store the birth date
+					gender: entry.resource.gender,
+					active: entry.resource.active,
+					deceasedBoolean: entry.resource.deceasedBoolean || false, // Default to false if not provided
 				}));
 			} catch (error) {
 				console.error('Error fetching patients:', error);
 			}
 		},
-
+		async fetchPatientConditions(patientId) {
+			if (!patientId) return;
+			try {
+				const response = await axios.get(`http://localhost:8080/fhir/Condition?patient=${patientId}`);
+				this.conditions = response.data.entry.filter(entry => entry.resource.clinicalStatus &&
+					entry.resource.clinicalStatus.coding.some(coding => coding.code === 'active'))
+					.map(entry => entry.resource.code.coding[0].display);
+			} catch (error) {
+				console.error('Error fetching patient conditions:', error);
+				this.conditions = []; // Reset conditions on error
+			}
+		},
 	},
 	created() {
 		this.fetchScreeningServices();
@@ -176,11 +249,33 @@ export default {
 			if (!this.selectedPatientId) return '';
 
 			const patient = this.patients.find(p => p.id === this.selectedPatientId);
-			if (!patient || !patient.name || patient.name.length === 0) return 'No name available';
+			if (!patient) return 'Patient data not available';
 
-			const givenName = patient.name[0].given.join(" "); // Join all given names with a space
-			const familyName = patient.name[0].family;
-			return `${givenName} ${familyName}`;
+			const nameOutput = (() => {
+				if (!patient.name || patient.name.length === 0) return 'No name available';
+				const givenName = patient.name[0].given.join(" "); // Assuming multiple given names
+				const familyName = patient.name[0].family;
+				return `${givenName} ${familyName}`;
+			})();
+
+			const ageOutput = this.calculateAge(patient.birthDate);
+			const genderOutput = patient.gender ? patient.gender : 'Unknown';
+			const activeOutput = patient.active ? 'Yes' : 'No';
+			const deceasedOutput = patient.deceasedBoolean ? 'Yes' : 'No';
+
+			return {
+				name: nameOutput,
+				age: ageOutput,
+				gender: genderOutput,
+				active: activeOutput,
+				deceased: deceasedOutput
+			};
+		},
+	},
+	watch: {
+		selectedPatientId(newVal) {
+			this.fetchPatientConditions(newVal);
+			this.fetchCompletedProcedures(newVal);
 		},
 	},
 }
