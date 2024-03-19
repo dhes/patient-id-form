@@ -136,22 +136,14 @@ export default {
 		},
 		async fetchScreeningServices() {
 			try {
-				const servicesResponse = await axios.get('http://localhost:8080/cds-services');
-				const planDefinitionsPromises = servicesResponse.data.services.map(service =>
-					axios.get(`http://localhost:8080/fhir/PlanDefinition/${service.id}`)
-				);
-				// Wait for all PlanDefinition fetches to complete
-				const planDefinitionsResponses = await Promise.all(planDefinitionsPromises);
-				this.screeningServices = servicesResponse.data.services.map((service, index) => {
-					const planDefinition = planDefinitionsResponses[index].data;
-					return {
-						id: service.id,
-						title: service.title,
-						description: planDefinition.action && planDefinition.action.length ? planDefinition.action[0].description : 'No description available'
-					};
-				});
+				const response = await axios.get('http://localhost:8080/cds-services');
+				this.screeningServices = response.data.services.map(service => ({
+					id: service.id,
+					title: service.title,
+					description: service.description // Assuming the response includes a 'description' field
+				}));
 			} catch (error) {
-				console.error('Error fetching screening services and plan definitions:', error);
+				console.error('Error fetching screening services:', error);
 			}
 		},
 		async submitForm() {
