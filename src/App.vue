@@ -16,7 +16,8 @@
 		</form>
 		<h2>Screening Types:</h2>
 		<ul>
-			<li v-for="service in screeningServices" :key="service.id">
+			<li v-for="service in screeningServices" :key="service.id"
+				:title="service.description">
 				{{ service.title }}
 			</li>
 		</ul>
@@ -135,10 +136,22 @@ export default {
 		},
 		async fetchScreeningServices() {
 			try {
-				const response = await axios.get('http://localhost:8080/cds-services');
-				this.screeningServices = response.data.services; // Assuming the JSON structure includes a services array
+				const servicesResponse = await axios.get('http://localhost:8080/cds-services');
+				const planDefinitionsPromises = servicesResponse.data.services.map(service =>
+					axios.get(`http://localhost:8080/fhir/PlanDefinition/${service.id}`)
+				);
+				// Wait for all PlanDefinition fetches to complete
+				const planDefinitionsResponses = await Promise.all(planDefinitionsPromises);
+				this.screeningServices = servicesResponse.data.services.map((service, index) => {
+					const planDefinition = planDefinitionsResponses[index].data;
+					return {
+						id: service.id,
+						title: service.title,
+						description: planDefinition.action && planDefinition.action.length ? planDefinition.action[0].description : 'No description available'
+					};
+				});
 			} catch (error) {
-				console.error('Error fetching screening services:', error);
+				console.error('Error fetching screening services and plan definitions:', error);
 			}
 		},
 		async submitForm() {
