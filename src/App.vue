@@ -62,9 +62,9 @@
 				<h2>Recommendations</h2>
 				<ul>
 					<li v-for="recommendation in recommendations"
-						:key="recommendation.screeningType">
+						:key="recommendation.screeningType + recommendation.recommendation">
 						<strong>{{ recommendation.screeningType }}:</strong> {{
-			recommendation.recommendation }}
+							recommendation.recommendation }}
 					</li>
 				</ul>
 			</div>
@@ -153,17 +153,19 @@ export default {
 				try {
 					const response = await axios.get(url);
 					const requestGroup = response.data.contained.find(containedItem => containedItem.resourceType === 'RequestGroup');
-					if (requestGroup && requestGroup.action && requestGroup.action.length > 0 && requestGroup.action[0].title && requestGroup.action[0].title !== "No recommendation found.") {
-						// Only push if there's a valid recommendation
-						this.recommendations.push({
-							screeningType: service.title,
-							recommendation: requestGroup.action[0].title
+					if (requestGroup && requestGroup.action && requestGroup.action.length > 0) {
+						// Loop through all actions and gather all recommendations
+						requestGroup.action.forEach(action => {
+							if (action.title && action.title !== "No recommendation found.") {
+								this.recommendations.push({
+									screeningType: service.title,
+									recommendation: action.title
+								});
+							}
 						});
 					}
-					// Do not push "No recommendation found." to the list
 				} catch (error) {
 					console.error("Error fetching recommendation for service:", service.title, error);
-					// You could handle errors differently or keep silent depending on your app's error handling strategy
 				}
 			}
 			if (this.recommendations.length > 0) {
